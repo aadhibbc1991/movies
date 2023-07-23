@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Movie Catalogue</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style type="text/css">
+		html, body {
+			width: 100%;
+			height: 100%;
+			font-family: verdana;
+			background-color: #202020;
+			font-size: 102%;
+			color: #DDDDDD;
+		}
+		input, select {
+			background-color: #101010;
+			border: 1px solid grey;
+			border-radius: 50px;
+			font-size: 110%;
+			color: #DDDDDD;
+			padding: 10px;
+		}
+		div {
+			margin: 2px;
+		}
+		h2 {
+			margin: 20px;
+			color: #DDDDDD;
+			display: inline-block;
+		}
+	</style>
+</head>
+<body>
+	<center>
+	<h2>Movie Catalogue</h2><input id="inputbox" onchange="processInput(this.value)" style="width: 60%;"/>
+	<!-- <select id="sufix">
+		<option value="&btnI"> </option>
+		<option value="+trailer+play+youtube&btnI">Trailer</option>
+		<option value="+teaser+play+youtube&btnI">Teaser</option>
+		<option value="+funny+Scene+play+youtube&btnI">Funny Scene</option>
+		<option value="+action+scene+play+youtube&btnI">Action Scene</option>
+		<option value="+cool+scene+play+youtube&btnI">Cool Scenes</option>
+	</select> -->
+	<!-- <input value="Top" type="button" onclick="processInput(document.getElementById('inputbox').value)" style="position: fixed; top: 20px; right: 20px"/> -->
+	<div id="outputdiv" style="overflow-y: scroll; max-height: 85%"></div>
+	<!-- overflow-y: scroll; -->
+	</center>
+	<script src="VoidVectorDataNew.js"></script>
+	<script type="text/javascript">
+
+		function findCorrectSpelling(givenWord, collection) {
+		  function calculateLevenshteinDistance(a, b) {
+		    const dp = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
+
+		    for (let i = 0; i <= a.length; i++) {
+		      dp[i][0] = i;
+		    }
+
+		    for (let j = 0; j <= b.length; j++) {
+		      dp[0][j] = j;
+		    }
+
+		    for (let i = 1; i <= a.length; i++) {
+		      for (let j = 1; j <= b.length; j++) {
+		        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+		        dp[i][j] = Math.min(
+		          dp[i - 1][j] + 1,
+		          dp[i][j - 1] + 1,
+		          dp[i - 1][j - 1] + cost
+		        );
+		      }
+		    }
+
+		    return dp[a.length][b.length];
+		  }
+
+		  let closestWord = '';
+		  let minDistance = Infinity;
+
+		  for (let i = 0; i < collection.length; i++) {
+		    const currentWord = collection[i];
+		    const distance = calculateLevenshteinDistance(givenWord, currentWord);
+
+		    if (distance < minDistance) {
+		      minDistance = distance;
+		      closestWord = currentWord;
+		    }
+		  }
+
+		  return closestWord;
+		}
+
+		function lowercaseKeys(obj) {
+		  return Object.keys(obj).reduce((accumulator, key) => {
+		    accumulator[key.toLowerCase()] = obj[key];
+		    return accumulator;
+		  }, {});
+		}
+
+		vectorsAll = lowercaseKeys(vectors());
+		// images = lowercaseKeys(nameImages());
+		collectionName = Object.getOwnPropertyNames(vectorsAll);
+
+		function cosineSimilarity(inputVec) {
+			var score = {}
+			var n = 0;
+			for (k in vectorsAll) {
+				var compareVec = vectorsAll[k];
+				var num = 0; var den1 = 0; var den2 = 0;
+				for (i=0; i<inputVec.length; i++) {
+					var num = num + (inputVec[i] * compareVec[i]);
+					var den1 = den1 + (inputVec[i] * inputVec[i]);
+					var den2 = den2 + (compareVec[i] * compareVec[i]);
+				}
+				var den = Math.sqrt(den1)*Math.sqrt(den2);
+				if (den != 0) {score[k] = num/den;} else {score[k] = 0;}
+			}
+			// console.log("Score: ");
+			// console.log(score);
+			return score
+		}
+
+		function sortDict(d) {
+			var keyValueArray = Object.entries(d);
+			keyValueArray.sort((a, b) => b[1] - a[1]);
+			// keyValueArray.sort((a, b) => b[1] - a[1]);
+			// keyValueArray.sort((a, b) => b[1] - a[1]);
+			var sortedDictionary = Object.fromEntries(keyValueArray);
+			// console.log(sortedDictionary)
+
+			// var sortedDictionary = Object.entries(d)
+			//   .sort(([, a], [, b]) => b - a)
+			//   .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+			return sortedDictionary
+		}
+
+		function imageUrls(d) {
+			var d = sortDict(d);
+			var outstr = '';
+			for (k in d) {
+				if (k in d) {
+					var val = d[k]*100;
+					console.log(val);
+					// var imgsrc = images[k];
+					if (val > 90) {
+						var outstr = outstr + '<div style="display: block; max-width: 100%;">';
+						var outstr = outstr + '<div style="display: block;">';
+						var outstr = outstr + '<div style="display: block; margin-top: 30px; text-align: center;">NAME: <a style="font-size: 110%; color: white; margin: 10px;">'+k.toUpperCase()+'</a>';
+						var outstr = outstr + '<br>MATCH SCORE: <a style="font-size: 110%; color: white; margin: 10px;">'+val.toFixed(2)+'%</a></div>';
+						var outstr = outstr + '<center>';
+						var outstr = outstr + '<img onclick="window.open(\'https://www.netflix.com/search?q='+k.replace(/'/g, '')+'\', target=\'_blank\')" src="https://i.pcmag.com/imagery/reviews/05cItXL96l4LE9n02WfDR0h-5..v1582751026.png" style="height: 150px; width: 225px; margin: 2px;"/>';
+						// var outstr = outstr + '</div>';
+						// var outstr = outstr + '<div>';
+						var outstr = outstr + '<img onclick="window.open(\'https://www.primevideo.com/region/eu/search/ref=atv_nb_sug?ie=UTF8&phrase='+k.replace(/ /g, '+').replace(/'/g, '')+'\', target=\'_blank\')" src="https://images.hindustantimes.com/tech/rf/image_size_960x540/HT/p2/2020/04/02/Pictures/amazon-prime_27a68f2c-74ac-11ea-b308-ad7e0b841a10.jpg" style="height: 150px; width: 225px; margin: 2px;"/>';
+						
+						var outstr = outstr + '<img onclick="window.open(\'https://www.hotstar.com/in/explore?search_query='+k.replace(/ /g, '+').replace(/'/g, '')+'\', target=\'_blank\')" src="https://static.india.com/wp-content/uploads/2023/06/image-700x472-15.png?impolicy=Medium_Resize&w=1200&h=800" style="height: 150px; width: 225px; margin: 2px;"/>';
+						var outstr = outstr + '<img onclick="window.open(\'https://www.google.com/search?q=play+trailer+of+movie+'+k.replace(/ /g, '+').replace(/'/g, '')+'&btnI\', target=\'_blank\')" src="https://variety.com/wp-content/uploads/2020/06/youtube-logo.png?w=999" style="height: 150px; width: 225px; margin: 2px;"/>';
+
+						var outstr = outstr + '</center>';
+
+						var outstr = outstr + '</div>';
+						// var outstr = outstr + '<div>';
+						// var outstr = outstr + '<input style="width: 100%;" type="button" value="Trailer" onclick="window.open(\'https://www.google.com/search?q='+k.replace(/ /g, "+").replace(/'/g, '')+'+\'+document.getElementById(\'sufix\').value, target=\'_blank\')"/>';
+						// var outstr = outstr + '</div>';
+						var outstr = outstr + '</div>';
+					} else {
+						// break;
+					}
+				}
+			}
+
+
+			return outstr
+		}
+
+		function processInput(name) {
+			var scrollableDiv = document.getElementById('outputdiv');
+    		scrollableDiv.scrollTop = 0;
+			var name = name.toLowerCase();
+			var name = findCorrectSpelling(name, collectionName);
+			if (name in vectorsAll) {
+				var inputVec = vectorsAll[name];
+				var scores = cosineSimilarity(inputVec);
+				var sortedDict = scores;
+				// var sortedDict = sortDict(scores);
+				
+				// console.log('sortedDict')
+				// console.log(sortedDict)
+
+				document.getElementById('outputdiv').innerHTML = imageUrls(sortedDict);
+			} else {alert('name not found!!!')}
+		}
+	</script>
+</body>
+</html>
